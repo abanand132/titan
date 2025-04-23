@@ -25,10 +25,11 @@ class Board {
     }
 
     createHexagonalCircuits() {
-        // Create three concentric hexagons
+        // Define circuit sizes and weights
         const radiuses = [0.8, 0.6, 0.4]; // Relative to canvas size
-        const weights = [[1, 2, 1], [4, 5, 6], [8, 9, 8]]; // Edge weights for each circuit
+        const weights = [[1, 2, 1], [4, 5, 6], [8, 9, 8]]; // Edge weights
 
+        // Create each hexagonal circuit
         radiuses.forEach((radius, circuitIndex) => {
             const nodes = [];
             const actualRadius = (this.canvas.width / 2) * radius;
@@ -40,15 +41,14 @@ class Board {
                 const y = this.centerY + actualRadius * Math.sin(angle);
                 
                 nodes.push({
-                    x,
-                    y,
+                    x, y,
                     circuit: circuitIndex,
                     index: i,
                     occupied: null
                 });
             }
 
-            // Connect nodes with edges
+            // Connect nodes with edges within the same circuit
             for (let i = 0; i < 6; i++) {
                 const weight = weights[circuitIndex][i % 3];
                 this.edges.push({
@@ -62,20 +62,33 @@ class Board {
             this.nodes.push(...nodes);
         });
 
-        // Create connecting edges between circuits
-        for (let circuit = 0; circuit < 2; circuit++) {
-            for (let i = 0; i < 6; i++) {
-                const startNode = this.nodes[circuit * 6 + i];
-                const endNode = this.nodes[(circuit + 1) * 6 + i];
-                const weight = weights[circuit + 1][i % 3];
-                
-                this.edges.push({
-                    start: startNode,
-                    end: endNode,
-                    weight,
-                    controlled: null
-                });
-            }
+        // Create connecting edges between outer and middle circuit
+        for (let i = 0; i < 6; i += 2) {
+            const startNode = this.nodes[i]; // Outer circuit node
+            const endNode = this.nodes[6 + i]; // Middle circuit node
+            const weight = weights[1][i % 3];
+            
+            this.edges.push({
+                start: startNode,
+                end: endNode,
+                weight,
+                controlled: null
+            });
+        }
+
+        // Create connecting edges between middle and inner circuit
+        // Starting from the nodes that weren't connected in the previous step
+        for (let i = 1; i < 6; i += 2) {
+            const startNode = this.nodes[6 + i]; // Middle circuit node
+            const endNode = this.nodes[12 + i]; // Inner circuit node
+            const weight = weights[2][i % 3];
+            
+            this.edges.push({
+                start: startNode,
+                end: endNode,
+                weight,
+                controlled: null
+            });
         }
     }
 
